@@ -1,0 +1,19 @@
+{
+    "name": "fan-control",
+    "version": "1.0.0",
+    "description": "A Dockerized PWM fan control script for Raspberry Pi",
+    "main": "fan_control.py",
+    "dependencies": {
+      "RPi.GPIO": "^0.7.0"
+    },
+    "scripts": {
+      "start": "python fan_control.py"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/madchristian/fan-control.git"
+    },
+    "author": "Christian Strube",
+    "license": "MIT"
+  }
+  
