@@ -1,24 +1,19 @@
-#! /usr/bin/env python3
+#!/usr/bin/env python3
 import RPi.GPIO as GPIO
 import time
 import signal
 import sys
 
-# The Noctua PWM control actually wants 25 kHz (kilo!), see page 6 on:
-# https://noctua.at/pub/media/wysiwyg/Noctua_PWM_specifications_white_paper.pdf
-# However, the RPi.GPIO library causes high CPU usage when using high
-# frequencies - probably because it can currently only do software PWM.
-# So we set a lower frequency in the 10s of Hz here. You should expect that
-# this value doesn't work very well and adapt it to what works in your setup.
-# We will work on the issue and try to use hardware PWM in the future:
-PWM_FREQ = 25           # [Hz] PWM frequency
+# Set the BCM pin used to drive PWM fan
+FAN_PIN = 18
 
-FAN_PIN = 18            # BCM pin used to drive PWM fan
-WAIT_TIME = 1           # [s] Time to wait between each refresh
+# Set the PWM frequency in Hz
+PWM_FREQ = 25
 
-OFF_TEMP = 30           # [      C] temperature below which to stop the fan
-MIN_TEMP = 35           # [      C] temperature above which to start the fan
-MAX_TEMP = 70           # [      C] temperature at which to operate at max fan speed
+# Set the temperature thresholds and fan speeds
+OFF_TEMP = 30
+MIN_TEMP = 35
+MAX_TEMP = 70
 FAN_LOW = 1
 FAN_HIGH = 100
 FAN_OFF = 0
@@ -38,3 +33,32 @@ def handleFanSpeed(fan, temperature):
 
     elif temperature < OFF_TEMP:
         fan.start(FAN_OFF)
+
+
+# Set the GPIO mode explicitly
+GPIO.setmode(GPIO.BCM)
+
+# Create a PWM instance for the fan
+fan = GPIO.PWM(FAN_PIN, PWM_FREQ)
+
+# Set the initial fan speed to off
+fan.start(FAN_OFF)
+
+# Continuously monitor the temperature and adjust the fan speed
+try:
+    while True:
+        temperature = getCpuTemperature()
+        handleFanSpeed(fan, temperature)
+        time.sleep(WAIT_TIME)
+
+except KeyboardInterrupt:
+    # Clean up the GPIO pins
+    fan.stop()
+    GPIO.cleanup()
+
+except Exception as e:
+    # Handle any other exceptions
+    print('Error: %s' % e, file=sys.stderr)
+    fan.stop()
+    GPIO.cleanup()
+    sys.exit(1)
